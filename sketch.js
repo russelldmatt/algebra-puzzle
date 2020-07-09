@@ -1,9 +1,14 @@
 let allSymbols = ["😂", "🤢", "👽", "😱", "🙈", "😈"];
 let star = "⭐";
 
-let top_left = [10, 10];
-let boardHeight = 430;
-let boardWidth = 430;
+let aspect_ratio = 500 / 640;
+let wth = Math.min(screen.width, 640);
+let hgt = aspect_ratio * wth;
+let size_ratio = wth / 640;
+let sizef = size => size * size_ratio;
+let top_left = [sizef(10), sizef(10)];
+let boardHeight = sizef(430);
+let boardWidth = sizef(430);
 let bottom_right = (function() {
   let [x, y] = top_left;
   return [x + boardWidth, y + boardHeight];
@@ -18,36 +23,38 @@ const state = {
   inputs: [],
 };
 
-function shuffle(array) {
-  var currentIndex = array.length,
-    temporaryValue,
-    randomIndex;
+// function shuffle(array) {
+//   var currentIndex = array.length,
+//     temporaryValue,
+//     randomIndex;
 
-  // While there remain elements to shuffle...
-  while (0 !== currentIndex) {
-    // Pick a remaining element...
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex -= 1;
+//   // While there remain elements to shuffle...
+//   while (0 !== currentIndex) {
+//     // Pick a remaining element...
+//     randomIndex = Math.floor(Math.random() * currentIndex);
+//     currentIndex -= 1;
 
-    // And swap it with the current element.
-    temporaryValue = array[currentIndex];
-    array[currentIndex] = array[randomIndex];
-    array[randomIndex] = temporaryValue;
-  }
+//     // And swap it with the current element.
+//     temporaryValue = array[currentIndex];
+//     array[currentIndex] = array[randomIndex];
+//     array[randomIndex] = temporaryValue;
+//   }
 
-  return array;
-}
+//   return array;
+// }
 
 function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
 }
 
 function getEmojiSize() {
-  return map(state.symbols.length, 2, 6, 75, 50);
+  // go from 75 -> 50 as #symbols goes from 2 -> 6
+  return sizef(map(state.symbols.length, 2, 6, 75, 50));
 }
 
 function getTextSize() {
-  return map(state.symbols.length, 2, 6, 32, 24);
+  // go from 32 -> 24 as #symbols goes from 2 -> 6
+  return sizef(map(state.symbols.length, 2, 6, 32, 24));
 }
 
 function drawBoard() {
@@ -97,7 +104,7 @@ function matrix() {
       A.subset(math.index(state.num_rows + i, symbol_index), cur + 1);
     }
   }
-  console.log(A);
+
   return A;
 }
 
@@ -152,10 +159,10 @@ function drawSums() {
 
 function drawGuessArea(createInputs) {
   // draw guess area
-  let x = 500;
-  let y_start = 50;
+  let x = sizef(500);
+  let y_start = sizef(50);
   let y = y_start;
-  let size = 32;
+  let size = sizef(32);
   textSize(size);
   for (let symbol of state.symbols) {
     text(`${symbol} = `, x, y);
@@ -208,7 +215,7 @@ function hardReset() {
 }
 
 function setup() {
-  let canvas = createCanvas(640, 500);
+  let canvas = createCanvas(wth, hgt);
   canvas.parent("sketch");
   newState();
   // let guessCanvas = createGraphics(640, 400);
@@ -216,13 +223,13 @@ function setup() {
   let [x, y] = drawGame({ createInputs: true });
 
   {
-    let x = 150;
-    let y = 460;
+    let x = sizef(150);
+    let y = sizef(460);
     rows_slider = createSlider(2, 6, state.num_rows);
     rows_slider.parent("sketch");
     cols_slider = createSlider(2, 6, state.num_cols);
     cols_slider.parent("sketch");
-    textSize(15);
+    textSize(sizef(15));
     textAlign(RIGHT, CENTER);
     text(`number of rows: ${rows_slider.value()}`, x, y);
     rows_slider.position(x + 10, y);
