@@ -1,182 +1,270 @@
-const symbols = ["😂", "😍", "🤢"];
-let symbol_values = [1, 2, 3];
-const num_cols = 3;
-const num_rows = 3;
+let allSymbols = ["😂", "🤢", "🥶", "😱", "😡", "😈"];
+let star = "⭐";
 
-let num_partitions = 8;
-let step = 2;
-let grid = [];
-let inputs = [];
+let top_left = [10, 10];
+let boardHeight = 430;
+let boardWidth = 430;
+let bottom_right = (function() {
+  let [x, y] = top_left;
+  return [x + boardWidth, y + boardHeight];
+})();
 
-function drawBoard(top_left, bottom_right) {
-  let [x1, y1] = top_left;
-  let [x2, y2] = bottom_right;
-  for (i = 0; i <= num_cols; i++) {
-    x = x1 + ((x2 - x1) * i * step) / num_partitions;
-    line(x, y1, x, y2);
+const state = {
+  symbols: [],
+  symbol_values: [],
+  num_cols: 3,
+  num_rows: 3,
+  grid: [],
+  inputs: [],
+};
+
+function shuffle(array) {
+  var currentIndex = array.length,
+    temporaryValue,
+    randomIndex;
+
+  // While there remain elements to shuffle...
+  while (0 !== currentIndex) {
+    // Pick a remaining element...
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+
+    // And swap it with the current element.
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
   }
-  for (i = 0; i <= num_rows; i++) {
-    y = y1 + ((y2 - y1) * i * step) / num_partitions;
-    line(x1, y, x2, y);
-  }
-}
 
-function drawSymbol(canvas, symbol, size, i, j, top_left, bottom_right) {
-  let [x1, y1] = top_left;
-  let [x2, y2] = bottom_right;
-  x = x1 + ((x2 - x1) * (i + 0.5) * step) / num_partitions;
-  y = y1 + ((y2 - y1) * (j + 0.5) * step) / num_partitions;
-  canvas.textAlign(CENTER, CENTER);
-  canvas.textSize(size);
-  canvas.text(symbol, x, y);
+  return array;
 }
 
 function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
 }
 
+function getEmojiSize() {
+  return map(state.symbols.length, 2, 6, 75, 50);
+}
+
+function getTextSize() {
+  return map(state.symbols.length, 2, 6, 32, 24);
+}
+
+function drawBoard() {
+  let [x1, y1] = top_left;
+  let [x2, y2] = bottom_right;
+  for (i = 0; i <= state.num_cols; i++) {
+    x = x1 + (i * (x2 - x1)) / (state.num_cols + 1);
+    line(x, y1, x, y2);
+  }
+  for (i = 0; i <= state.num_rows; i++) {
+    y = y1 + (i * (y2 - y1)) / (state.num_rows + 1);
+    line(x1, y, x2, y);
+  }
+}
+
+function drawSymbol(symbol, size, i, j) {
+  let [x1, y1] = top_left;
+  let [x2, y2] = bottom_right;
+  x = x1 + ((x2 - x1) * (i + 0.5)) / (state.num_cols + 1);
+  y = y1 + ((y2 - y1) * (j + 0.5)) / (state.num_rows + 1);
+  textAlign(CENTER, CENTER);
+  textSize(size);
+  text(symbol, x, y);
+}
+
 function computeRowSum(row, symbol_values) {
   let sum = 0;
-  for (let i = 0; i < num_cols; i++) {
-    sum += symbol_values[grid[i][row]];
+  for (let i = 0; i < state.num_cols; i++) {
+    sum += symbol_values[state.grid[i][row]];
   }
   return sum;
 }
 
 function computeColSum(col, symbol_values) {
   let sum = 0;
-  for (let j = 0; j < num_rows; j++) {
-    sum += symbol_values[grid[col][j]];
+  for (let j = 0; j < state.num_rows; j++) {
+    sum += symbol_values[state.grid[col][j]];
   }
   return sum;
 }
 
-function newGame(canvas, top_left, bottom_right) {
-  drawBoard(top_left, bottom_right);
-  for (let i = 0; i < num_cols; i++) {
+function newGrid() {
+  let grid = [];
+  for (let i = 0; i < state.num_cols; i++) {
     grid.push([]);
-    for (let j = 0; j < num_rows; j++) {
-      let symbol_idx = getRandomInt(symbols.length);
+    for (let j = 0; j < state.num_rows; j++) {
+      let symbol_idx = getRandomInt(state.symbols.length);
       grid[i].push(symbol_idx);
-      drawSymbol(canvas, symbols[symbol_idx], 64, i, j, top_left, bottom_right);
     }
   }
+  return grid;
+}
+
+function drawSymbols() {
+  for (let i = 0; i < state.num_cols; i++) {
+    for (let j = 0; j < state.num_rows; j++) {
+      let symbol_idx = state.grid[i][j];
+      drawSymbol(state.symbols[symbol_idx], getEmojiSize(), i, j);
+    }
+  }
+}
+
+function drawSums() {
   // draw sums
-  for (let i = 0; i < num_cols; i++) {
-    let sum = computeColSum(i, symbol_values);
-    drawSymbol(
-      canvas,
-      `${sum}`,
-      32,
-      i,
-      num_rows - 0.25,
-      top_left,
-      bottom_right,
-    );
+  for (let i = 0; i < state.num_cols; i++) {
+    let sum = computeColSum(i, state.symbol_values);
+    drawSymbol(`${sum}`, getTextSize(), i, state.num_rows - 0.2);
   }
-  for (let j = 0; j < num_rows; j++) {
-    let sum = computeRowSum(j, symbol_values);
-    drawSymbol(
-      canvas,
-      `${sum}`,
-      32,
-      num_cols - 0.25,
-      j,
-      top_left,
-      bottom_right,
-    );
+  for (let j = 0; j < state.num_rows; j++) {
+    let sum = computeRowSum(j, state.symbol_values);
+    drawSymbol(`${sum}`, getTextSize(), state.num_cols - 0.2, j);
   }
+}
+
+function drawGuessArea(createInputs) {
   // draw guess area
-  textAlign(CENTER, CENTER);
   let x = 500;
-  let y = 100;
+  let y_start = 50;
+  let y = y_start;
   let size = 32;
   textSize(size);
-  for (let symbol of symbols) {
+  for (let symbol of state.symbols) {
     text(`${symbol} = `, x, y);
-    let input = createInput("");
-    input.position(x + size + 10, y);
-    input.size(50);
-    inputs.push(input);
-    y += 100;
+    if (createInputs) {
+      let input = createInput("");
+      input.parent("sketch");
+      input.position(x + size + 10, y);
+      input.size(50);
+      state.inputs.push(input);
+    }
+    y += (0.9 * boardHeight - y_start) / state.symbols.length;
   }
   return [x, y];
 }
 
+function drawGame({ createInputs }) {
+  fill("black");
+  drawBoard();
+  drawSymbols();
+  drawSums();
+  let [x, y] = drawGuessArea(createInputs);
+  return [x, y];
+}
+
 function getGuesses() {
-  return inputs.map(i => {
+  return state.inputs.map(i => {
     let v = i.value();
     return v ? int(v) : 0;
   });
 }
 
+function newState() {
+  let num_symbols = max(state.num_cols, state.num_rows);
+  let symbols = shuffle(allSymbols);
+  state.symbols = symbols.slice(0, num_symbols);
+  let max_symbol_value = 30;
+  state.symbol_values = state.symbols.map(_ => getRandomInt(max_symbol_value));
+  console.log(state.symbol_values);
+  state.grid = newGrid();
+}
+
+function hardReset() {
+  clear();
+  state.inputs = [];
+  for (let el of Array.from(document.querySelector("#sketch").children)) {
+    el.remove();
+  }
+}
+
 function setup() {
-  createCanvas(640, 480);
-  let canvas = createGraphics(640, 400);
-  var guessCanvas;
+  let canvas = createCanvas(640, 500);
+  canvas.parent("sketch");
+  newState();
   // let guessCanvas = createGraphics(640, 400);
 
-  let top_left = [10, 10];
-  let bottom_right = [440, 440];
-  let [x, y] = newGame(canvas, top_left, bottom_right);
+  let [x, y] = drawGame({ createInputs: true });
+
+  {
+    let x = 150;
+    let y = 460;
+    rows_slider = createSlider(2, 6, state.num_rows);
+    rows_slider.parent("sketch");
+    cols_slider = createSlider(2, 6, state.num_cols);
+    cols_slider.parent("sketch");
+    textSize(15);
+    textAlign(RIGHT, CENTER);
+    text(`number of rows: ${rows_slider.value()}`, x, y);
+    rows_slider.position(x + 10, y);
+    text(`number of cols: ${cols_slider.value()}`, x, y + 20);
+    cols_slider.position(x + 10, y + 20);
+    rows_slider.input(x => {
+      state.num_rows = rows_slider.value();
+      hardReset();
+      setup();
+    });
+    cols_slider.input(x => {
+      state.num_cols = cols_slider.value();
+      hardReset();
+      setup();
+    });
+  }
+
   let button_background_color = "#990fd2";
   {
     let button = createButton("check answer");
+    button.parent("sketch");
     button.style("background-color", button_background_color);
     button.style("color", "white");
     button.position(x, y);
     button.style("cursor: pointer");
     button.style("border-radius", "5px");
     button.mousePressed(() => {
-      if (guessCanvas) {
-        guessCanvas.remove();
-      }
-      guessCanvas = createGraphics(640, 400);
-      // guessCanvas.clear();
-      // guessCanvas.background(0, 0, 0);
-      // guessCanvas.clear();
+      erase();
+      let [x1, y1] = top_left;
+      let [x2, y2] = bottom_right;
+      rect(x1, y1, x2, y2);
+      noErase();
+      drawGame({ createInputs: false });
       let guesses = getGuesses();
-      console.log(guesses);
-      let draw = (sum, i, j) => {
-        drawSymbol(guessCanvas, `${sum}`, 32, i, j, top_left, bottom_right);
-      };
+      let allCorrect = true;
 
-      console.log("hi");
-      // for (let i = 0; i < num_cols; i++) {
-      //   let sum = computeColSum(i, symbol_values);
-      //   let guessSum = computeColSum(i, guesses);
-      //   guessCanvas.fill(sum === guessSum ? "green" : "red");
-      //   draw(guessSum, i, num_rows + 0.25);
-      // }
-      for (let j = 0; j < num_rows; j++) {
-        let sum = computeRowSum(j, symbol_values);
-        let guessSum = computeRowSum(j, guesses);
-        guessCanvas.fill(sum === guessSum ? "green" : "red");
-        draw(guessSum, num_cols + 0.25, j);
+      for (let i = 0; i < state.num_cols; i++) {
+        let sum = computeColSum(i, state.symbol_values);
+        let guessSum = computeColSum(i, guesses);
+        let correct = sum === guessSum;
+        allCorrect = allCorrect && correct;
+        fill(correct ? "green" : "red");
+        drawSymbol(guessSum, getTextSize(), i, state.num_rows + 0.25);
       }
-      image(guessCanvas, 0, 0);
+      for (let j = 0; j < state.num_rows; j++) {
+        let sum = computeRowSum(j, state.symbol_values);
+        let guessSum = computeRowSum(j, guesses);
+        let correct = sum === guessSum;
+        allCorrect = allCorrect && correct;
+        fill(correct ? "green" : "red");
+        drawSymbol(guessSum, getTextSize(), state.num_cols + 0.25, j);
+      }
+
+      if (allCorrect) {
+        drawSymbol(star, getEmojiSize(), state.num_cols, state.num_rows);
+      }
     });
   }
   y += 30;
   {
     let button = createButton("new game");
+    button.parent("sketch");
     button.style("background-color", button_background_color);
     button.style("color", "white");
     button.position(x, y);
     button.style("cursor: pointer");
     button.style("border-radius", "5px");
     button.mousePressed(() => {
-      clear();
-      for (let input of inputs) {
-        input.remove();
-      }
-      inputs = [];
-      grid = [];
-      [x, y] = newGame(canvas, top_left, bottom_right);
-      image(canvas, 0, 0);
+      hardReset();
+      setup();
     });
   }
-  image(canvas, 0, 0);
 }
 
 function draw() {}
