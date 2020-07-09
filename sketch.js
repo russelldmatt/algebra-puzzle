@@ -3,6 +3,7 @@ let star = "⭐";
 
 let aspect_ratio = 500 / 640;
 let wth = Math.min(screen.width, 640);
+document.getElementById("foo").innerHTML += `<br>${wth}`;
 let hgt = aspect_ratio * wth;
 let size_ratio = wth / 640;
 let sizef = size => size * size_ratio;
