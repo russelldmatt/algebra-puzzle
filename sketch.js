@@ -73,6 +73,34 @@ function drawSymbol(symbol, size, i, j) {
   text(symbol, x, y);
 }
 
+function hasUniqueSolution(A) {
+  let AT = math.transpose(A);
+  let ATA = math.multiply(AT, A);
+  return math.det(ATA) !== 0;
+}
+
+function matrix() {
+  let A = math.zeros(state.num_rows + state.num_cols, state.symbols.length);
+  // rows
+  for (let j = 0; j < state.num_rows; j++) {
+    for (let i = 0; i < state.num_cols; i++) {
+      let symbol_index = state.grid[i][j];
+      let cur = A.subset(math.index(j, symbol_index));
+      A.subset(math.index(j, symbol_index), cur + 1);
+    }
+  }
+  // cols
+  for (let i = 0; i < state.num_cols; i++) {
+    for (let j = 0; j < state.num_rows; j++) {
+      let symbol_index = state.grid[i][j];
+      let cur = A.subset(math.index(state.num_rows + i, symbol_index));
+      A.subset(math.index(state.num_rows + i, symbol_index), cur + 1);
+    }
+  }
+  console.log(A);
+  return A;
+}
+
 function computeRowSum(row, symbol_values) {
   let sum = 0;
   for (let i = 0; i < state.num_cols; i++) {
@@ -132,10 +160,11 @@ function drawGuessArea(createInputs) {
   for (let symbol of state.symbols) {
     text(`${symbol} = `, x, y);
     if (createInputs) {
-      let input = createInput("");
+      let input = createInput("", "tel");
       input.parent("sketch");
       input.position(x + size + 10, y);
       input.size(50);
+
       state.inputs.push(input);
     }
     y += (0.9 * boardHeight - y_start) / state.symbols.length;
@@ -167,6 +196,7 @@ function newState() {
   state.symbol_values = state.symbols.map(_ => getRandomInt(max_symbol_value));
   console.log(state.symbol_values);
   state.grid = newGrid();
+  console.log("has unique solution:", hasUniqueSolution(matrix()));
 }
 
 function hardReset() {
