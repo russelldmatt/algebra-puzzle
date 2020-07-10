@@ -214,6 +214,11 @@ function hardReset() {
   }
 }
 
+function preload() {
+  incorrect = loadSound("wrong.wav");
+  correct = loadSound("right.wav");
+}
+
 function setup() {
   let canvas = createCanvas(wth, hgt);
   canvas.parent("sketch");
@@ -285,6 +290,9 @@ function setup() {
 
       if (allCorrect) {
         drawSymbol(star, getEmojiSize(), state.num_cols, state.num_rows);
+        correct.play();
+      } else {
+        incorrect.play();
       }
     });
   }
